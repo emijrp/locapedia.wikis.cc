@@ -18,6 +18,7 @@
 import json
 import re
 import pywikibot
+import time
 import urllib
 import urllib.parse
 
@@ -52,63 +53,75 @@ def unquotefilename(filename):
 
 def main():
     site = pywikibot.Site('locapedia', 'wikiscc')
-    #provincia a analizar
-    prov = u'Provincia de Toledo'
-    ccaa = u'Castilla-La Mancha'
-    
     prov2ccaa = {
-        u'Provincia de Toledo': u'Castilla-La Mancha', 
+        'Provincia de Albacete': 'Castilla-La Mancha', 
+        #'Provincia de Ávila': 'Castilla y León', 
+        #'Provincia de Badajoz': 'Extremadura', 
+        #'Provincia de Burgos': 'Castilla y León', 
+        'Provincia de Cáceres': 'Extremadura', 
+        'Provincia de Ciudad Real': 'Castilla-La Mancha', 
+        'Provincia de Cuenca': 'Castilla-La Mancha', 
+        'Provincia de Guadalajara': 'Castilla-La Mancha', 
+        #'Provincia de León': 'Castilla y León', 
+        #'Provincia de Palencia': 'Castilla y León', 
+        #'Provincia de Salamanca': 'Castilla y León', 
+        #'Provincia de Segovia': 'Castilla y León', 
+        #'Provincia de Soria': 'Castilla y León', 
+        #'Provincia de Toledo': 'Castilla-La Mancha', 
+        #'Provincia de Valladolid': 'Castilla y León', 
+        #'Provincia de Zamora': 'Castilla y León', 
     }
     
-    with open('municipios-espana.json', 'r') as f:
-        municipios = json.loads(f.read())
-    
-    municipios2 = {}
-    for municipio in municipios:
-        if not municipio['item'] in municipios2:
-            municipios2[municipio['item']] = {}
-        for k, v in municipio.items():
-            if not k in municipios2[municipio['item']]:
-                if k in ['border', 'borderLabel']:
-                    municipios2[municipio['item']][k] = [v]
-                else:
-                    municipios2[municipio['item']][k] = v
-            elif k == 'admLabel':
-                if 'provincia' in v.lower(): #overwrite, we prefer province
-                    municipios2[municipio['item']][k] = v
-            elif k in ['border', 'borderLabel']:
-                if not v in municipios2[municipio['item']][k]:
-                    municipios2[municipio['item']][k].append(v)
-                    municipios2[municipio['item']][k].sort()
-    
-    for k, v in municipios2.items():
-        if not 'admLabel' in v or ('admLabel' in v and v['admLabel'] != prov):
-            continue
+    for prov, ccaa in prov2ccaa.items():
+        with open('municipios-espana.json', 'r') as f:
+            municipios = json.loads(f.read())
         
-        nombre = 'itemLabel' in v and v['itemLabel'] or ''
-        bandera = 'flag' in v and v['flag'] or ''
-        bandera = unquotefilename(bandera)
-        simbolo = 'coatofarms' in v and v['coatofarms'] or ''
-        simbolo = unquotefilename(simbolo)
-        mapa = 'map' in v and v['map'] or ''
-        mapa = unquotefilename(mapa)
-        provincia = v['admLabel']
-        ccaa = prov2ccaa[provincia]
-        poblacion = 'population' in v and v['population'] or ''
-        superficie = 'area' in v and v['area'] or ''
-        elevacion = 'elevation' in v and v['elevation'] or ''
-        coordenadas = 'coordinates' in v and v['coordinates'] or ''
-        if coordenadas:
-            coordenadas = re.sub(r'(?i)(Point\(|\))', '', coordenadas)
-            coordenadas = '%s, %s' % (coordenadas.split(' ')[1], coordenadas.split(' ')[0])
-        limitrofecon = 'borderLabel' in v and (', '.join(v['borderLabel'])) or ''
-        wikidata = 'item' in v and v['item'] or ''
-        if wikidata:
-            wikidata = wikidata.split('/entity/')[1]
-        osm = 'osm' in v and v['osm'] or ''
-        commonscat = 'commonscat' in v and v['commonscat'] or ''
+        municipios2 = {}
+        for municipio in municipios:
+            if not municipio['item'] in municipios2:
+                municipios2[municipio['item']] = {}
+            for k, v in municipio.items():
+                if not k in municipios2[municipio['item']]:
+                    if k in ['border', 'borderLabel']:
+                        municipios2[municipio['item']][k] = [v]
+                    else:
+                        municipios2[municipio['item']][k] = v
+                elif k == 'admLabel':
+                    if 'provincia' in v.lower(): #overwrite, we prefer province
+                        municipios2[municipio['item']][k] = v
+                elif k in ['border', 'borderLabel']:
+                    if not v in municipios2[municipio['item']][k]:
+                        municipios2[municipio['item']][k].append(v)
+                        municipios2[municipio['item']][k].sort()
         
-        output = u"""{{Portada
+        for k, v in municipios2.items():
+            if not 'admLabel' in v or ('admLabel' in v and v['admLabel'] != prov):
+                continue
+            
+            nombre = 'itemLabel' in v and v['itemLabel'] or ''
+            bandera = 'flag' in v and v['flag'] or ''
+            bandera = unquotefilename(bandera)
+            simbolo = 'coatofarms' in v and v['coatofarms'] or ''
+            simbolo = unquotefilename(simbolo)
+            mapa = 'map' in v and v['map'] or ''
+            mapa = unquotefilename(mapa)
+            provincia = v['admLabel']
+            ccaa = prov2ccaa[provincia]
+            poblacion = 'population' in v and v['population'] or ''
+            superficie = 'area' in v and v['area'] or ''
+            elevacion = 'elevation' in v and v['elevation'] or ''
+            coordenadas = 'coordinates' in v and v['coordinates'] or ''
+            if coordenadas:
+                coordenadas = re.sub(r'(?i)(Point\(|\))', '', coordenadas)
+                coordenadas = '%s, %s' % (coordenadas.split(' ')[1], coordenadas.split(' ')[0])
+            limitrofecon = 'borderLabel' in v and (', '.join(v['borderLabel'])) or ''
+            wikidata = 'item' in v and v['item'] or ''
+            if wikidata:
+                wikidata = wikidata.split('/entity/')[1]
+            osm = 'osm' in v and v['osm'] or ''
+            commonscat = 'commonscat' in v and v['commonscat'] or ''
+            
+            output = u"""{{Portada
 |nombre=%s
 |nombre wiki=
 |imagen cabecera=
@@ -130,23 +143,31 @@ def main():
 |osm=%s
 |commonscat=%s
 }}""" % (nombre, bandera, simbolo, mapa, provincia, ccaa, poblacion, superficie, elevacion, coordenadas, limitrofecon, wikidata, osm, commonscat)
+            
+            if poblacion and int(poblacion) >= 1000:
+                #portadas = [nombre, 'Wiki %s' % (nombre), '%s Wiki' % (nombre)]
+                portadas = [nombre]
+                for portada in portadas:
+                    print(portada)
+                    if portada == nombre:
+                        time.sleep(0.5)
+                        page = pywikibot.Page(site, portada)
+                        if not page.exists() or (page.exists() and page.text != output):
+                            pywikibot.showDiff(page.text, output)
+                            page.text = output
+                            try:
+                                page.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
+                            except:
+                                time.sleep(10)
+                                try:
+                                    page.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
+                                except:
+                                    pass
+                    else:
+                        red = pywikibot.Page(site, portada)
+                        if not red.exists():
+                            red.text = '{{:%s}}' % (nombre)
+                            red.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
         
-        if int(poblacion) >= 1000:
-            #portadas = [nombre, 'Wiki %s' % (nombre), '%s Wiki' % (nombre)]
-            portadas = [nombre]
-            for portada in portadas:
-                print(portada)
-                if portada == nombre:
-                    page = pywikibot.Page(site, portada)
-                    #if not page.exists():
-                    page.text = output
-                    pywikibot.showDiff('', output)
-                    page.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
-                else:
-                    red = pywikibot.Page(site, portada)
-                    if not red.exists():
-                        red.text = '{{:%s}}' % (nombre)
-                        red.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
-    
 if __name__ == '__main__':
     main()
