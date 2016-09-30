@@ -1,0 +1,23 @@
+
+Primer método
+-------------
+
+Requiere el paquete: sudo apt-get install osmctools osmosis
+
+1) Descargar .pbf: http://download.geofabrik.de/europe/spain.html
+2) Convertir fichero de formato: osmconvert file.pbf -o=file.o5m
+3) Calcular calles: osmfilter spain-latest.osm.o5m --keep="addr:country= and addr:city= and addr:street=" --ignore-depemdencies --drop-relations --drop-ways | osmconvert - --csv="@oname @id @lon @lat addr:country addr:city addr:street"
+
+Problemas:
+* Solo extrae aquellas calles (streets) que tengan los tag ciudades definidos (addr:city). No todas lo tienen, la mayoría de calles son meras vías sin información sobre ciudad, país (addr:country), etc. La solución parece ser extraer todas las calles dentro del boundaries (polígono) del municipio.
+
+Segundo método
+--------------
+
+Requiere los polígonos del municipio en cuestión https://github.com/JamesChevalier/cities
+
+1) Descargar .pbf: http://download.geofabrik.de/europe/spain.html
+2) Bajar el polígono del municipio de GitHub
+3) osmosis --read-pbf-fast spain-latest.osm.pbf file="spain-latest.osm.pbf" --bounding-polygon file="cadiz.poly" --write-xml file="cadiz.osm"
+4) Ya tirar de osmfilter o de grep o lo que sea para sacar los elementos que nos interesen (calles, edificios, monumentos, etc)
+
