@@ -58,21 +58,21 @@ def main():
     minpoblacion = 1000
     prov2ccaa = {
         'Provincia de Albacete': 'Castilla-La Mancha', 
-        #'Provincia de Ávila': 'Castilla y León', 
-        #'Provincia de Badajoz': 'Extremadura', 
-        #'Provincia de Burgos': 'Castilla y León', 
+        'Provincia de Ávila': 'Castilla y León', 
+        'Provincia de Badajoz': 'Extremadura', 
+        'Provincia de Burgos': 'Castilla y León', 
         'Provincia de Cáceres': 'Extremadura', 
         'Provincia de Ciudad Real': 'Castilla-La Mancha', 
         'Provincia de Cuenca': 'Castilla-La Mancha', 
         'Provincia de Guadalajara': 'Castilla-La Mancha', 
-        #'Provincia de León': 'Castilla y León', 
-        #'Provincia de Palencia': 'Castilla y León', 
-        #'Provincia de Salamanca': 'Castilla y León', 
-        #'Provincia de Segovia': 'Castilla y León', 
-        #'Provincia de Soria': 'Castilla y León', 
-        #'Provincia de Toledo': 'Castilla-La Mancha', 
-        #'Provincia de Valladolid': 'Castilla y León', 
-        #'Provincia de Zamora': 'Castilla y León', 
+        'Provincia de León': 'Castilla y León', 
+        'Provincia de Palencia': 'Castilla y León', 
+        'Provincia de Salamanca': 'Castilla y León', 
+        'Provincia de Segovia': 'Castilla y León', 
+        'Provincia de Soria': 'Castilla y León', 
+        'Provincia de Toledo': 'Castilla-La Mancha', 
+        'Provincia de Valladolid': 'Castilla y León', 
+        'Provincia de Zamora': 'Castilla y León', 
     }
     ccaa2gitosm = {
         'Castilla-La Mancha': 'castilla-la-mancha',
@@ -80,7 +80,10 @@ def main():
         'Extremadura': 'extremadura',
     }
     
-    for prov, ccaa in prov2ccaa.items():
+    prov2ccaa_list = [[k, v] for k, v in prov2ccaa.items()]
+    prov2ccaa_list.sort()
+    
+    for prov, ccaa in prov2ccaa_list:
         with open('municipios-espana.json', 'r') as f:
             municipios = json.loads(f.read())
         
@@ -102,7 +105,9 @@ def main():
                         municipios2[municipio['item']][k].append(v)
                         municipios2[municipio['item']][k].sort()
         
-        for k, v in municipios2.items():
+        municipios2_list = [[v['itemLabel'], k, v] for k, v in municipios2.items()]
+        municipios2_list.sort()
+        for j, k, v in municipios2_list:
             if not 'admLabel' in v or ('admLabel' in v and v['admLabel'] != prov):
                 continue
             time.sleep(0.1)
