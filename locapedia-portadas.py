@@ -16,10 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+import os
 import re
 import pywikibot
 import time
 import urllib
+import urllib.request
 import urllib.parse
 
 """
@@ -53,6 +55,7 @@ def unquotefilename(filename):
 
 def main():
     site = pywikibot.Site('locapedia', 'wikiscc')
+    minpoblacion = 1000
     prov2ccaa = {
         'Provincia de Albacete': 'Castilla-La Mancha', 
         #'Provincia de Ávila': 'Castilla y León', 
@@ -70,6 +73,11 @@ def main():
         #'Provincia de Toledo': 'Castilla-La Mancha', 
         #'Provincia de Valladolid': 'Castilla y León', 
         #'Provincia de Zamora': 'Castilla y León', 
+    }
+    ccaa2gitosm = {
+        'Castilla-La Mancha': 'castilla-la-mancha',
+        'Castilla y León': 'castilla-y-león',
+        'Extremadura': 'extremadura',
     }
     
     for prov, ccaa in prov2ccaa.items():
@@ -97,8 +105,11 @@ def main():
         for k, v in municipios2.items():
             if not 'admLabel' in v or ('admLabel' in v and v['admLabel'] != prov):
                 continue
+            time.sleep(0.1)
             
             nombre = 'itemLabel' in v and v['itemLabel'] or ''
+            nombre_ = re.sub(' ', '-', nombre.lower())
+            print('== %s ==' % (nombre))
             bandera = 'flag' in v and v['flag'] or ''
             bandera = unquotefilename(bandera)
             simbolo = 'coatofarms' in v and v['coatofarms'] or ''
@@ -121,7 +132,33 @@ def main():
             osm = 'osm' in v and v['osm'] or ''
             commonscat = 'commonscat' in v and v['commonscat'] or ''
             
-            output = u"""{{Portada
+            if poblacion and int(poblacion) >= minpoblacion:
+                # calcular parametros desde ficheros OSM
+                osmelementos = []
+                urlpoly = 'raw.githubusercontent.com/JamesChevalier/cities/master/spain/%s/%s_%s.poly' % (ccaa2gitosm[ccaa], nombre_, ccaa2gitosm[ccaa])
+                try:
+                    print('https://%s' % (urlpoly))
+                    req = urllib.request.Request('https://%s' % (urllib.parse.quote(urlpoly)), headers={ 'User-Agent': 'Mozilla/5.0' })
+                    poly = urllib.request.urlopen(req).read().strip().decode('utf-8')
+                    if os.path.exists('temp.poly'):
+                        os.remove('temp.poly')
+                    if os.path.exists('temp.osm'):
+                        os.remove('temp.osm')
+                    if 'polygon' in poly:
+                        #print (poly)
+                        with open('temp.poly', 'w') as g:
+                            g.write(poly)
+                        os.system('osmosis --read-pbf-fast spain-latest.osm.pbf file="spain-latest.osm.pbf" --bounding-polygon file="temp.poly" --write-xml file="temp.osm"')
+                        #os.system('grep \'k="name"\' temp.osm | sort | uniq > temp2.txt')
+                        with open('temp.osm', 'r') as g:
+                            raw = g.read()
+                            osmelementos = list(set(re.findall(r'<tag k="name" v="([^<>]+?)"/>', raw)))
+                            osmelementos.sort()
+                except:
+                    pass
+                
+                osmelementos = ', '.join(osmelementos)
+                output = """{{Portada
 |nombre=%s
 |nombre wiki=
 |imagen cabecera=
@@ -139,12 +176,13 @@ def main():
 |conocido por=
 |botones fondo=
 |botones texto=
+|commonscat=%s
 |wikidata=%s
 |osm=%s
-|commonscat=%s
-}}""" % (nombre, bandera, simbolo, mapa, provincia, ccaa, poblacion, superficie, elevacion, coordenadas, limitrofecon, wikidata, osm, commonscat)
-            
-            if poblacion and int(poblacion) >= 1000:
+|osm elementos=%s
+}}""" % (nombre, bandera, simbolo, mapa, provincia, ccaa, poblacion, superficie, elevacion, coordenadas, limitrofecon, commonscat, wikidata, osm, osmelementos)
+                print(output)
+                
                 #portadas = [nombre, 'Wiki %s' % (nombre), '%s Wiki' % (nombre)]
                 portadas = [nombre]
                 for portada in portadas:
@@ -152,22 +190,24 @@ def main():
                     if portada == nombre:
                         time.sleep(0.5)
                         page = pywikibot.Page(site, portada)
-                        if not page.exists() or (page.exists() and page.text != output):
-                            pywikibot.showDiff(page.text, output)
-                            page.text = output
+                        page.text = output
+                        try:
+                            page.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
+                        except:
+                            print('Error guardando la pagina. Reintentando en 10 segundos...')
+                            time.sleep(10)
                             try:
                                 page.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
                             except:
-                                time.sleep(10)
-                                try:
-                                    page.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
-                                except:
-                                    pass
+                                print('Error de nuevo. Saltamos')
+                                pass
                     else:
                         red = pywikibot.Page(site, portada)
                         if not red.exists():
                             red.text = '{{:%s}}' % (nombre)
                             red.save('BOT - Creando portada para [[%s]]' % (nombre), botflag=True)
-        
+            else:
+                print('No llega a %s habitantes, saltamos' % (minpoblacion))
+
 if __name__ == '__main__':
     main()
