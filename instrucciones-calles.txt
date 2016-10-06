@@ -17,7 +17,7 @@ Segundo método
 Requiere los polígonos del municipio en cuestión https://github.com/JamesChevalier/cities
 
 1) Descargar .pbf: http://download.geofabrik.de/europe/spain.html
-2) Bajar el polígono del municipio de GitHub
+2) Bajar el polígono del municipio de https://github.com/JamesChevalier/cities
 3) osmosis --read-pbf-fast spain-latest.osm.pbf file="spain-latest.osm.pbf" --bounding-polygon file="cadiz.poly" --write-xml file="cadiz.osm"
 4) Ya tirar de osmfilter o de grep o lo que sea para sacar los elementos que nos interesen (calles, edificios, monumentos, etc)
 
