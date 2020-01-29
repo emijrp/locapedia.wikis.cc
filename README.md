@@ -1,2 +1,3 @@
 # locapedia.wikis.cc
-Scripts para locapedias
+
+Scripts para locapedias.
